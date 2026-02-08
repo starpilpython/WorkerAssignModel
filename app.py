@@ -272,9 +272,10 @@ def page_home():
                 with col1:
                     if st.button("⚡ 최적화 실행", type="primary", use_container_width=True, disabled=df.empty):
                         with st.spinner("데이터 분석 중..."):
-                            print(df)
                             final = WORKFORCE_ASSIGN(df=df,workers=workers,n=3)
                             final.modeling()
+                            print('*'*10)
+                            print(final.result)
                             if final.result != None:
                                 st.session_state['result'] = final.result.reset_index() # 결과 데이터 프레임 생성 및 상태 저장 
                                 st.session_state['human'] = final.worker_counts.reset_index()
