@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import io
 from model.intern_assign import WORKFORCE_ASSIGN # 최적화 코드 
+from model.make_excel import create_excel_file 
 
 # -----------------------------------------------------------------------------
 # 1. 초기 설정 (1920x1080 고정)
@@ -169,9 +170,10 @@ def page_home():
     col_left, col_right = st.columns([5, 5])
 
     # 결과 초기화 
-    st.session_state['result'] = None
-    st.session_state['human'] = None
-    st.session_state['group'] = None
+    if 'result' not in st.session_state:
+        st.session_state['result'] = None
+        st.session_state['human'] = None
+        st.session_state['group'] = None
     
     # -------------------------------------------------------------------------
     # [좌측 패널]
@@ -287,21 +289,23 @@ def page_home():
                 with col2:
                     # 엑셀 다운로드 로직
                     if st.session_state.get('result') is not None and not st.session_state['result'].empty:
-                        buffer = io.BytesIO()
-                        with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
-                            st.session_state['result'].to_excel(writer, sheet_name='배정결과',index=True)
-                            st.session_state['human'].to_excel(writer, sheet_name='인력별집계',index=True)
-                            st.session_state['group'].to_excel(writer, sheet_name='구분별집계',index=True)
-
-                        download_data = buffer.getvalue()
-                        
-                        st.download_button(
-                            label="📜 Excel 다운",
-                            data=download_data,
-                            file_name="배정결과.xlsx",
-                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                            use_container_width=True
+                        # 엑셀 파일 생성 함수 호출
+                        excel_buffer = create_excel_file(
+                            st.session_state['result'], 
+                            st.session_state['human'], 
+                            st.session_state['group'], 
+                            df # 설정(Out Dept) 확인용
                         )
+                        
+                        if excel_buffer:
+                            download_data = excel_buffer.getvalue()
+                            st.download_button(
+                                label="📜 Excel 다운",
+                                data=download_data,
+                                file_name="배정결과_통합.xlsx",
+                                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                use_container_width=True
+                            )
                     else:
                         st.button('📜 Excel 다운', disabled=True, use_container_width=True)
             
@@ -370,7 +374,6 @@ def page_home():
 def main():
     set_dashboard_style()
     page_home()
-
 
 
 if __name__ == "__main__":
