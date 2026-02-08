@@ -122,7 +122,8 @@ def set_dashboard_style():
         }
         
         /* [버튼 스타일] */
-        .stButton > button {
+        .stButton > button, 
+        .stDownloadButton > button {
             min-height: 38px !important; height: 38px !important;
             padding-top: 0px !important; padding-bottom: 0px !important;
             font-size: 15px !important;
