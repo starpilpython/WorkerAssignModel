@@ -17,15 +17,8 @@ st.set_page_config(
 # -----------------------------------------------------------------------------
 # 2. 상태 관리
 # -----------------------------------------------------------------------------
-if 'page' not in st.session_state:
-    st.session_state['page'] = 'home'
-
 if 'uploader_key' not in st.session_state:
     st.session_state['uploader_key'] = 0
-
-# def navigate_to(page_name):
-#     st.session_state['page'] = page_name
-#     st.rerun()
 
 def reset_uploader():
     st.session_state['uploader_key'] += 1
@@ -377,6 +370,7 @@ def page_home():
 
 def main():
     set_dashboard_style()
+    page_home()
 
 
 
