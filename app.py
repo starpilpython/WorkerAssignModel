@@ -341,7 +341,9 @@ def page_home():
             with tab1:
                 if st.session_state['result'] == None:
                     show_placeholder("👥", "최적화 실행 후<br><b>집계</b>가 표시됩니다.")
+                    
                 else:
+                    print(st.session_state['result'])
                     # 결과값 입력
                     st.dataframe(
                         st.session_state['result'],
