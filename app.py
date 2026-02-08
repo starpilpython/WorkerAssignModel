@@ -275,8 +275,8 @@ def page_home():
                             final = WORKFORCE_ASSIGN(df=df,workers=workers,n=3)
                             final.modeling()
                             print('*'*10)
-                            print(final.result)
-                            if final.result != None:
+                            print('✅최적화 분석 완료')
+                            if final.result is not None:
                                 st.session_state['result'] = final.result.reset_index() # 결과 데이터 프레임 생성 및 상태 저장 
                                 st.session_state['human'] = final.worker_counts.reset_index()
                                 st.session_state['group'] = final.dept_counts_by_month.reset_index()
