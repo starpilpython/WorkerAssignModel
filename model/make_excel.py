@@ -22,7 +22,7 @@ def create_excel_file(result, human_df, group_df, df):
     writer = pd.ExcelWriter(output, engine='xlsxwriter')
     
     # 3. 데이터프레임 시트 작성 (Sheet1)
-    result.to_excel(writer, sheet_name='Sheet1')
+    result.to_excel(writer, sheet_name='Sheet1', index=False)
     workbook  = writer.book
     worksheet = writer.sheets['Sheet1']
 
