@@ -6,15 +6,15 @@ def create_excel_file(result, human_df, group_df, df):
     if result is None or result.empty:
         return None
 
-    # 1. 설정 정보 추출 (Out Departments 식별)
+    # 1. 설정 정보 추출 (Out Departments 식별 - 근무지 기준)
     # df 컬럼: ['구분','진료과그룹','근무지','인력_Min','인력_Max','월별_Min','월별_Max']
-    # '진료과그룹'이 'main'이 아닌 경우를 out_depts로 간주 (대소문자 무시)
     out_depts = []
-    if not df.empty and '구분' in df.columns and '진료과그룹' in df.columns:
+    if not df.empty and '구분' in df.columns and '근무지' in df.columns:
         for idx, row in df.iterrows():
             dept_name = row['구분']
-            group = str(row['진료과그룹']).lower()
-            if 'main' not in group:
+            location = str(row['근무지']).lower()
+            # 근무지에 'out'이 포함되면 파견으로 간주
+            if 'out' in location:
                 out_depts.append(dept_name)
     
     # 2. Excel 버퍼 생성
