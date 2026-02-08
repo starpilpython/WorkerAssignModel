@@ -333,11 +333,9 @@ def page_home():
             # [높이 조정] 좌측 패널 상단(Uploader 등)이 우측 탭보다 높이가 더 차지하므로,
             # 우측의 본문(DataFrame) 높이를 늘려서(750px) 전체 바닥 라인을 맞춤.
             with tab1:
-                if st.session_state['result'] == None:
-                    show_placeholder("👥", "최적화 실행 후<br><b>집계</b>가 표시됩니다.")
-                    
+                if st.session_state['result'] is None:
+                    show_placeholder("👥", "최적화 실행 후<br><b>집계</b>가 표시됩니다.")                    
                 else:
-                    print(st.session_state['result'])
                     # 결과값 입력
                     st.dataframe(
                         st.session_state['result'],
@@ -347,7 +345,7 @@ def page_home():
                     )
 
             with tab2:
-                if st.session_state['result'] == None:
+                if st.session_state['result'] is None:
                     show_placeholder("👥", "최적화 실행 후<br><b>인력별 집계</b>가 표시됩니다.")
                 else:
                     # 결과값 입력
@@ -358,7 +356,7 @@ def page_home():
                         hide_index=True
                     )                
             with tab3:
-                if st.session_state['result'] == None:
+                if st.session_state['result'] is None:
                     show_placeholder("👥", "최적화 실행 후<br><b>구분별 집계</b>가 표시됩니다.")
                 else:
                     # 결과값 입력
