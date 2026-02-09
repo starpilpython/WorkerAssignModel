@@ -24,6 +24,7 @@ class WORKFORCE_ASSIGN:
         self.out_group_count = n # 파견병원 총 제한 횟수
         self.continue_work = ['out1'] # 연속 근무 허용
         self.constraints_list = [] # 제약조건 저장 리스트
+        self.error_log = None # [신규] 최적화 실패 원인 저장
         self._setting()
 
     '''설정 실행'''
@@ -172,6 +173,7 @@ class WORKFORCE_ASSIGN:
                 test_prob.solve(pulp.PULP_CBC_CMD(msg=0)) # 로그 없이 조용히 계산
                 
                 if pulp.LpStatus[test_prob.status] == 'Infeasible':
+                    self.error_log = f"충돌 규칙: {name}"
                     print(f"\n[발견] 다음 제약조건이 추가되면서 모델이 불가능해졌습니다:")
                     print(f">>> {name}")
                     print("-" * 50)

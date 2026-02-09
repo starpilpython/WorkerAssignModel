@@ -175,6 +175,7 @@ def page_home():
         st.session_state['result'] = None
         st.session_state['human'] = None
         st.session_state['group'] = None
+        st.session_state['error_log'] = None
     
     # -------------------------------------------------------------------------
     # [좌측 패널]
@@ -267,9 +268,33 @@ def page_home():
     with col_right:
         with st.container():
             # 헤더
-            rh_col1, rh_col2 = st.columns([6, 4], gap="small")
+            rh_col1, rh_col2 = st.columns([7, 3], gap="small")
             with rh_col1:
-                st.markdown('<div class="card-title" style="margin-top: 5px;">🚀 Action & Analysis</div>', unsafe_allow_html=True)
+                title_html = '<div class="card-title" style="margin-top: 5px; display: flex; align-items: center; gap: 15px;">'
+                title_html += '<span>🚀 Action & Analysis</span>'
+                
+                # 에러 로그가 있으면 옆에 작은 배지로 표시
+                if st.session_state.get('error_log'):
+                    error_msg = st.session_state['error_log']
+                    title_html += f'''
+                        <div style="
+                            background-color: #FEE2E2; 
+                            color: #B91C1C; 
+                            border: 1px solid #FECACA;
+                            border-radius: 6px; 
+                            padding: 4px 10px; 
+                            font-size: 14px; 
+                            font-weight: 600;
+                            white-space: nowrap;
+                            overflow: hidden;
+                            text-overflow: ellipsis;
+                            max-width: 400px;
+                        " title="{error_msg}">
+                             ⚠️ {error_msg}
+                        </div>
+                    '''
+                title_html += '</div>'
+                st.markdown(title_html, unsafe_allow_html=True)
             with rh_col2:
                 col1, col2 = st.columns([5, 4], gap="small")
                 with col1:
@@ -283,10 +308,12 @@ def page_home():
                                 st.session_state['result'] = final.result.reset_index() # 결과 데이터 프레임 생성 및 상태 저장 
                                 st.session_state['human'] = final.worker_counts.reset_index()
                                 st.session_state['group'] = final.dept_counts_by_month.reset_index()
+                                st.session_state['error_log'] = None
                             else:
                                 st.session_state['result'] = None
                                 st.session_state['human'] = None
                                 st.session_state['group'] = None
+                                st.session_state['error_log'] = getattr(final, 'error_log', "알 수 없는 최적화 오류")
                 with col2:
                     # 엑셀 다운로드 로직
                     if st.session_state.get('result') is not None and not st.session_state['result'].empty:
