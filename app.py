@@ -176,6 +176,7 @@ def page_home():
         st.session_state['human'] = None
         st.session_state['group'] = None
         st.session_state['error_log'] = None
+        st.session_state['pre_analysis'] = []
     
     # -------------------------------------------------------------------------
     # [좌측 패널]
@@ -286,11 +287,13 @@ def page_home():
                                     st.session_state['human'] = final.worker_counts.reset_index()
                                     st.session_state['group'] = final.dept_counts_by_month.reset_index()
                                     st.session_state['error_log'] = None
+                                    st.session_state['pre_analysis'] = []
                                 else:
                                     st.session_state['result'] = None
                                     st.session_state['human'] = None
                                     st.session_state['group'] = None
                                     st.session_state['error_log'] = getattr(final, 'error_log', "알 수 없는 최적화 오류")
+                                    st.session_state['pre_analysis'] = getattr(final, 'pre_analysis', [])
                             except Exception as e:
                                 st.session_state['result'] = None
                                 st.session_state['error_log'] = f"코드 실행 오류: {str(e)}"
@@ -322,11 +325,21 @@ def page_home():
             tab1, tab2, tab3 = st.tabs(["📋 배정결과", "👥 인력별집계", "📊 구분별집계"])
             
             # Placeholder 함수
-            def show_placeholder(icon, text, is_error=False):
+            def show_placeholder(icon, text, is_error=False, pre_analysis=None):
                 bg_color = "#FEF2F2" if is_error else "#F9FAFB"
                 border_color = "#FECACA" if is_error else "#D1D5DB"
                 text_color = "#B91C1C" if is_error else "#9CA3AF"
                 
+                content = f'<div style="font-size: 50px; margin-bottom: 10px;">{icon}</div>'
+                content += f'<div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 20px;">{text}</div>'
+                
+                if pre_analysis and len(pre_analysis) > 0:
+                    content += '<div style="text-align: left; background: white; padding: 15px; border-radius: 8px; border: 1px solid #FECACA; font-size: 0.9rem; max-width: 600px; margin: 0 auto;">'
+                    content += '<b style="color: #B91C1C;">📋 산술 분석 결과 (Solver 실행 전 발견):</b><br><br>'
+                    for item in pre_analysis:
+                        content += f'<div style="margin-bottom: 8px;">• {item}</div>'
+                    content += '</div>'
+
                 st.markdown(f'''
                     <div style="
                         height: 750px; 
@@ -341,8 +354,7 @@ def page_home():
                         text-align: center;
                         padding: 20px;
                     ">
-                        <div style="font-size: 50px; margin-bottom: 10px;">{icon}</div>
-                        <div style="font-size: 1.1rem; font-weight: 600;">{text}</div>
+                        {content}
                     </div>
                 ''', unsafe_allow_html=True)
 
@@ -351,8 +363,11 @@ def page_home():
             # -----------------------------------------------------------------
             with tab1:
                 if st.session_state['result'] is None:
-                    if st.session_state.get('error_log'):
-                        show_placeholder("⚠️", f"최적화 실패<br><br><small>{st.session_state['error_log']}</small>", is_error=True)
+                    if st.session_state.get('error_log') or st.session_state.get('pre_analysis'):
+                        show_placeholder("⚠️", f"최적화 실패", is_error=True, 
+                                         pre_analysis=st.session_state.get('pre_analysis'))
+                        if st.session_state.get('error_log'):
+                            st.caption(f"상세 충돌: {st.session_state['error_log']}")
                     else:
                         show_placeholder("👥", "최적화 실행 후<br><b>집계</b>가 표시됩니다.")                    
                 else:
@@ -365,7 +380,7 @@ def page_home():
 
             with tab2:
                 if st.session_state['result'] is None:
-                    if st.session_state.get('error_log'):
+                    if st.session_state.get('error_log') or st.session_state.get('pre_analysis'):
                         show_placeholder("⚠️", "최적화 실패로 인한<br>데이터 없음", is_error=True)
                     else:
                         show_placeholder("👥", "최적화 실행 후<br><b>인력별 집계</b>가 표시됩니다.")
@@ -378,7 +393,7 @@ def page_home():
                     )                
             with tab3:
                 if st.session_state['result'] is None:
-                    if st.session_state.get('error_log'):
+                    if st.session_state.get('error_log') or st.session_state.get('pre_analysis'):
                         show_placeholder("⚠️", "최적화 실패로 인한<br>데이터 없음", is_error=True)
                     else:
                         show_placeholder("👥", "최적화 실행 후<br><b>구분별 집계</b>가 표시됩니다.")

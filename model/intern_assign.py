@@ -25,6 +25,7 @@ class WORKFORCE_ASSIGN:
         self.continue_work = ['out1'] # 연속 근무 허용
         self.constraints_list = [] # 제약조건 저장 리스트
         self.error_log = None # [신규] 최적화 실패 원인 저장
+        self.pre_analysis = [] # [신규] 사전 산술 분석 결과 저장
         self._setting()
 
     '''설정 실행'''
@@ -63,6 +64,11 @@ class WORKFORCE_ASSIGN:
 
     '''모델링설정'''
     def modeling(self):
+        #----------------------------------
+        # 0. 사전 산술 분석 (Feasibility Check)
+        #----------------------------------
+        self._check_feasibility()
+        
         #----------------------------------
         # 정수계획법 setting
         #----------------------------------
