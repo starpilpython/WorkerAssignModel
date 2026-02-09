@@ -229,6 +229,31 @@ class WORKFORCE_ASSIGN:
         
         print("="*50 + "\n")
         
+    def _check_feasibility(self):
+        """솔버를 돌리기 전, 산술적으로 불가능한 지점이 있는지 체크"""
+        print("[DEBUG] 사전 산술 분석 시작...")
+        
+        # 1. 전체 공급 vs 전체 최소 수요
+        total_supply = self.workers * 12
+        total_min_demand = 0
+        for d in self.departments:
+            total_min_demand += self.dept_config[d]['limit_m'][0] * 12
+        
+        if total_min_demand > total_supply:
+            self.pre_analysis.append(f"❌ 전체 인력 부족: 총 공급 {total_supply}개월분 < 총 최소 요구 {total_min_demand}개월분 (최소 {total_min_demand - total_supply}개월분의 인력이 더 필요합니다.)")
+
+        # 2. 파견 병원 총량 체크
+        out_departments = [d for d, info in self.dept_config.items() if info['location_group'][0].startswith('out1')]
+        total_out_min_demand = 0
+        for d in out_departments:
+            total_out_min_demand += self.dept_config[d]['limit_m'][0] * 12
+        
+        max_out_capacity = self.workers * self.out_group_count
+        if total_out_min_demand > max_out_capacity:
+            self.pre_analysis.append(f"❌ 파견 병원 수요 초과: 파견지 최소 요구 {total_out_min_demand}개월분 > 인턴당 파견 제한 합계 {max_out_capacity}개월분")
+
+        if self.pre_analysis:
+            print(f"[DEBUG] 사전 분석에서 {len(self.pre_analysis)}개의 문제 발견")
                 
     '''집계표 출력'''
     def _short(self):

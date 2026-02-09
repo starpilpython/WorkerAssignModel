@@ -325,7 +325,7 @@ def page_home():
             tab1, tab2, tab3 = st.tabs(["📋 배정결과", "👥 인력별집계", "📊 구분별집계"])
             
             # Placeholder 함수
-            def show_placeholder(icon, text, is_error=False, pre_analysis=None):
+            def show_placeholder(icon, text, is_error=False, pre_analysis=None, error_log=None):
                 bg_color = "#FEF2F2" if is_error else "#F9FAFB"
                 border_color = "#FECACA" if is_error else "#D1D5DB"
                 text_color = "#B91C1C" if is_error else "#9CA3AF"
@@ -333,6 +333,25 @@ def page_home():
                 content = f'<div style="font-size: 50px; margin-bottom: 10px;">{icon}</div>'
                 content += f'<div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 20px;">{text}</div>'
                 
+                # [강조] 충돌 제약조건 표시
+                if error_log:
+                    content += f'''
+                        <div style="
+                            background-color: #FEE2E2; 
+                            color: #B91C1C; 
+                            border: 1px solid #FECACA;
+                            border-radius: 8px; 
+                            padding: 15px; 
+                            font-size: 1.2rem; 
+                            font-weight: 700;
+                            margin-bottom: 20px;
+                            max-width: 600px;
+                        ">
+                             🚨 {error_log}
+                        </div>
+                    '''
+
+                # [상세] 산술 분석 결과 표시
                 if pre_analysis and len(pre_analysis) > 0:
                     content += '<div style="text-align: left; background: white; padding: 15px; border-radius: 8px; border: 1px solid #FECACA; font-size: 0.9rem; max-width: 600px; margin: 0 auto;">'
                     content += '<b style="color: #B91C1C;">📋 산술 분석 결과 (Solver 실행 전 발견):</b><br><br>'
@@ -364,10 +383,9 @@ def page_home():
             with tab1:
                 if st.session_state['result'] is None:
                     if st.session_state.get('error_log') or st.session_state.get('pre_analysis'):
-                        show_placeholder("⚠️", f"최적화 실패", is_error=True, 
-                                         pre_analysis=st.session_state.get('pre_analysis'))
-                        if st.session_state.get('error_log'):
-                            st.caption(f"상세 충돌: {st.session_state['error_log']}")
+                        show_placeholder("⚠️", "최적화 실패", is_error=True, 
+                                         pre_analysis=st.session_state.get('pre_analysis'),
+                                         error_log=st.session_state.get('error_log'))
                     else:
                         show_placeholder("👥", "최적화 실행 후<br><b>집계</b>가 표시됩니다.")                    
                 else:
