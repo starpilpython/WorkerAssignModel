@@ -267,13 +267,13 @@ def page_home():
     # -------------------------------------------------------------------------
     with col_right:
         with st.container():
-            # 헤더
-            rh_col1, rh_col2 = st.columns([7, 3], gap="small")
+            # 헤더: 버튼들이 잘리지 않도록 비율 조정 (5:5)
+            rh_col1, rh_col2 = st.columns([5, 5], gap="medium")
             with rh_col1:
-                title_html = '<div class="card-title" style="margin-top: 5px; display: flex; align-items: center; gap: 15px;">'
-                title_html += '<span>🚀 Action & Analysis</span>'
+                title_html = '<div class="card-title" style="margin-top: 5px; display: flex; align-items: center; gap: 10px;">'
+                title_html += '<span style="white-space: nowrap;">🚀 Action & Analysis</span>'
                 
-                # 에러 로그가 있으면 옆에 작은 배지로 표시
+                # 에러 로그가 있으면 옆에 표시 (공간이 좁으므로 최대 너비 제한)
                 if st.session_state.get('error_log'):
                     error_msg = st.session_state['error_log']
                     title_html += f'''
@@ -282,13 +282,14 @@ def page_home():
                             color: #B91C1C; 
                             border: 1px solid #FECACA;
                             border-radius: 6px; 
-                            padding: 4px 10px; 
-                            font-size: 14px; 
+                            padding: 2px 8px; 
+                            font-size: 13px; 
                             font-weight: 600;
                             white-space: nowrap;
                             overflow: hidden;
                             text-overflow: ellipsis;
-                            max-width: 400px;
+                            max-width: 250px;
+                            cursor: help;
                         " title="{error_msg}">
                              ⚠️ {error_msg}
                         </div>
@@ -296,7 +297,8 @@ def page_home():
                 title_html += '</div>'
                 st.markdown(title_html, unsafe_allow_html=True)
             with rh_col2:
-                col1, col2 = st.columns([5, 4], gap="small")
+                # 버튼들 간의 간격을 위해 컬럼 비율 조정
+                col1, col2 = st.columns([1, 1], gap="small")
                 with col1:
                     if st.button("⚡ 최적화 실행", type="primary", use_container_width=True, disabled=df.empty):
                         with st.spinner("데이터 분석 중..."):
