@@ -300,20 +300,24 @@ def page_home():
                 with col1:
                     if st.button("⚡ 최적화 실행", type="primary", use_container_width=True, disabled=df.empty):
                         with st.spinner("데이터 분석 중..."):
-                            final = WORKFORCE_ASSIGN(df=df,workers=workers,n=3)
-                            final.modeling()
-                            print('*'*10)
-                            print('✅최적화 분석 완료')
-                            if final.result is not None:
-                                st.session_state['result'] = final.result.reset_index() # 결과 데이터 프레임 생성 및 상태 저장 
-                                st.session_state['human'] = final.worker_counts.reset_index()
-                                st.session_state['group'] = final.dept_counts_by_month.reset_index()
-                                st.session_state['error_log'] = None
-                            else:
+                            try:
+                                final = WORKFORCE_ASSIGN(df=df,workers=workers,n=3)
+                                final.modeling()
+                                
+                                if final.result is not None:
+                                    st.session_state['result'] = final.result.reset_index() # 결과 데이터 프레임 생성 및 상태 저장 
+                                    st.session_state['human'] = final.worker_counts.reset_index()
+                                    st.session_state['group'] = final.dept_counts_by_month.reset_index()
+                                    st.session_state['error_log'] = None
+                                else:
+                                    st.session_state['result'] = None
+                                    st.session_state['human'] = None
+                                    st.session_state['group'] = None
+                                    st.session_state['error_log'] = getattr(final, 'error_log', "알 수 없는 최적화 오류")
+                            except Exception as e:
                                 st.session_state['result'] = None
-                                st.session_state['human'] = None
-                                st.session_state['group'] = None
-                                st.session_state['error_log'] = getattr(final, 'error_log', "알 수 없는 최적화 오류")
+                                st.session_state['error_log'] = f"코드 실행 오류: {str(e)}"
+                                st.error(f"실행 중 오류가 발생했습니다: {e}")
                 with col2:
                     # 엑셀 다운로드 로직
                     if st.session_state.get('result') is not None and not st.session_state['result'].empty:
@@ -341,61 +345,71 @@ def page_home():
             tab1, tab2, tab3 = st.tabs(["📋 배정결과", "👥 인력별집계", "📊 구분별집계"])
             
             # Placeholder 함수
-            def show_placeholder(icon, text):
+            def show_placeholder(icon, text, is_error=False):
+                bg_color = "#FEF2F2" if is_error else "#F9FAFB"
+                border_color = "#FECACA" if is_error else "#D1D5DB"
+                text_color = "#B91C1C" if is_error else "#9CA3AF"
+                
                 st.markdown(f'''
                     <div style="
                         height: 750px; 
-                        background-color:#F9FAFB; 
+                        background-color:{bg_color}; 
                         border-radius:8px; 
                         display:flex; 
                         flex-direction:column; 
                         align-items:center; 
                         justify-content:center; 
-                        color:#9CA3AF; 
-                        border: 1px dashed #D1D5DB;
+                        color:{text_color}; 
+                        border: 1px dashed {border_color};
+                        text-align: center;
+                        padding: 20px;
                     ">
                         <div style="font-size: 50px; margin-bottom: 10px;">{icon}</div>
-                        <div>{text}</div>
+                        <div style="font-size: 1.1rem; font-weight: 600;">{text}</div>
                     </div>
                 ''', unsafe_allow_html=True)
 
             # -----------------------------------------------------------------
             # [Tab 1] 배정결과
             # -----------------------------------------------------------------
-            # [높이 조정] 좌측 패널 상단(Uploader 등)이 우측 탭보다 높이가 더 차지하므로,
-            # 우측의 본문(DataFrame) 높이를 늘려서(750px) 전체 바닥 라인을 맞춤.
             with tab1:
                 if st.session_state['result'] is None:
-                    show_placeholder("👥", "최적화 실행 후<br><b>집계</b>가 표시됩니다.")                    
+                    if st.session_state.get('error_log'):
+                        show_placeholder("⚠️", f"최적화 실패<br><br><small>{st.session_state['error_log']}</small>", is_error=True)
+                    else:
+                        show_placeholder("👥", "최적화 실행 후<br><b>집계</b>가 표시됩니다.")                    
                 else:
-                    # 결과값 입력
                     st.dataframe(
                         st.session_state['result'],
                         use_container_width=True, 
-                        height=750, # 700 -> 750 (좌측과의 균형 맞춤)
+                        height=750,
                         hide_index=True
                     )
 
             with tab2:
                 if st.session_state['result'] is None:
-                    show_placeholder("👥", "최적화 실행 후<br><b>인력별 집계</b>가 표시됩니다.")
+                    if st.session_state.get('error_log'):
+                        show_placeholder("⚠️", "최적화 실패로 인한<br>데이터 없음", is_error=True)
+                    else:
+                        show_placeholder("👥", "최적화 실행 후<br><b>인력별 집계</b>가 표시됩니다.")
                 else:
-                    # 결과값 입력
                     st.dataframe(
                         st.session_state['human'],
                         use_container_width=True, 
-                        height=750, # 700 -> 750 (좌측과의 균형 맞춤)
+                        height=750,
                         hide_index=True
                     )                
             with tab3:
                 if st.session_state['result'] is None:
-                    show_placeholder("👥", "최적화 실행 후<br><b>구분별 집계</b>가 표시됩니다.")
+                    if st.session_state.get('error_log'):
+                        show_placeholder("⚠️", "최적화 실패로 인한<br>데이터 없음", is_error=True)
+                    else:
+                        show_placeholder("👥", "최적화 실행 후<br><b>구분별 집계</b>가 표시됩니다.")
                 else:
-                    # 결과값 입력
                     st.dataframe(
                         st.session_state['group'],
                         use_container_width=True, 
-                        height=750, # 700 -> 750 (좌측과의 균형 맞춤)
+                        height=750,
                         hide_index=True
                     )
 

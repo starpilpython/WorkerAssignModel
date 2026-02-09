@@ -155,50 +155,74 @@ class WORKFORCE_ASSIGN:
 
         prob.writeLP("intern_debug.lp")
         prob.solve() 
-        print(f'[DEBUG] 분석상태: {pulp.LpStatus[prob.status]}')
+        print(f'[DEBUG] 분석상태: {pulp.LpStatus[prob.status]} (code: {prob.status})')
 
-        # [신규 추가] 최적화 실패 시 Additive Method로 원인 추적
-        if pulp.LpStatus[prob.status] == 'Infeasible':
-            print("\n" + "="*50)
-            print("[CRITICAL] 최적화 불능(Infeasible) 발생. 원인 분석을 시작합니다...")
-            print("="*50)
-            
-            # 테스트용 모델 생성
-            test_prob = pulp.LpProblem("Infeasible_Analysis", pulp.LpMinimize)
-            test_prob += 0
-            
-            # 제약조건을 하나씩 추가하며 어느 지점인지 확인
-            for ct, name in self.constraints_list:
-                test_prob += ct, name
-                test_prob.solve(pulp.PULP_CBC_CMD(msg=0)) # 로그 없이 조용히 계산
-                
-                if pulp.LpStatus[test_prob.status] == 'Infeasible':
-                    self.error_log = f"충돌 규칙: {name}"
-                    print(f"\n[발견] 다음 제약조건이 추가되면서 모델이 불가능해졌습니다:")
-                    print(f">>> {name}")
-                    print("-" * 50)
-                    print("이 규칙이 기존 규칙들과 충돌하고 있습니다. 데이터를 확인해 주세요.")
-                    print("="*50 + "\n")
-                    break
-        
-        ## 데이터 프레임으로 설정
-        if pulp.LpStatus[prob.status] in ['Optimal', 'Not Solved']:
+        # 1. 성공한 경우 (Optimal)
+        if pulp.LpStatus[prob.status] == 'Optimal':
             result_data = []
             for m in self.months:
                 for e in self.employees_index: 
                     for d in self.departments:
-                        if pulp.value(x[e][m][d]) == 1:
-                            dept_name = d
-                            result_data.append({'Month': m, 'Employee': e, 'Dept': dept_name})
-            self.result = pd.DataFrame(result_data).pivot(index='Employee', columns='Month', values='Dept')
-            self.result.index = self.employees_index
-            self.result.columns = self.months
-            self._short() #집계표 출력
-        else:
-            self.worker_counts = None #근로자당 집계
-            self.dept_counts_by_month = None #월별 집계
+                        val = pulp.value(x[e][m][d])
+                        if val is not None and round(val) == 1:
+                            result_data.append({'Month': m, 'Employee': e, 'Dept': d})
+            
+            if result_data:
+                self.result = pd.DataFrame(result_data).pivot(index='Employee', columns='Month', values='Dept')
+                self.result.index = self.employees_index
+                self.result.columns = self.months
+                self._short()
+                self.error_log = None
+            else:
+                self.result = None
+                self.error_log = "최적해를 찾았으나 배정 데이터가 생성되지 않았습니다 (모델 설정 오류)."
+
+        # 2. 불능인 경우 (Infeasible) -> 진단 루프 실행
+        elif pulp.LpStatus[prob.status] == 'Infeasible':
             self.result = None
-        print(f"총 제약조건 개수: {len(prob.constraints)}")        
+            self._run_diagnostic()
+
+        # 3. 기타 오류 (Undefined, Not Solved 등)
+        else:
+            self.result = None
+            self.error_log = f"최적화 실패: {pulp.LpStatus[prob.status]} (데이터가 너무 복잡하거나 제약이 너무 많습니다.)"
+            print(f"[ERROR] {self.error_log}")
+
+    def _run_diagnostic(self):
+        print("\n" + "="*50)
+        print("[CRITICAL] 최적화 불능(Infeasible) 발생. 원인 분석을 시작합니다...")
+        print(f"총 제약조건 {len(self.constraints_list)}개를 대상으로 이진 탐색을 수행합니다.")
+        print("="*50)
+        
+        low = 0
+        high = len(self.constraints_list) - 1
+        culprit_idx = -1
+
+        while low <= high:
+            mid = (low + high) // 2
+            test_prob = pulp.LpProblem("Infeasible_Analysis", pulp.LpMinimize)
+            test_prob += 0
+            for i in range(mid + 1):
+                ct, name = self.constraints_list[i]
+                test_prob += ct, name
+            
+            test_prob.solve(pulp.PULP_CBC_CMD(msg=0))
+            
+            if pulp.LpStatus[test_prob.status] == 'Infeasible':
+                culprit_idx = mid
+                high = mid - 1
+            else:
+                low = mid + 1
+
+        if culprit_idx != -1:
+            culprit_name = self.constraints_list[culprit_idx][1]
+            self.error_log = f"충돌 규칙: {culprit_name}"
+            print(f"\n[발견] 원인 제약조건: {culprit_name}")
+        else:
+            self.error_log = "제약조건 간의 복합적인 충돌로 특정 원인을 찾을 수 없습니다."
+        
+        print("="*50 + "\n")
+        
                 
     '''집계표 출력'''
     def _short(self):

@@ -4,3 +4,6 @@ streamlit>=1.30.0
 pulp>=2.7.0
 openpyxl>=3.1.0
 xlsxwriter>=3.0.0
+langgraph
+langchain
+langchain-openai
